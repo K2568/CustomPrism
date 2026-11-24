@@ -184,6 +184,12 @@ void ImportPage::updateState()
                 input.append("/file");
                 url = QUrl::fromUserInput(input);
             }
+            const auto flameSharePrefix = QStringLiteral("https://www.curseforge.com/minecraft/share/");
+            if (input.startsWith(flameSharePrefix)) {
+                input.remove(0, flameSharePrefix.length());
+                input.prepend("https://api.curseforge.com/v1/shared-profile/");
+                url = QUrl::fromUserInput(input);
+            }
             // hook, line and sinker.
             QFileInfo fi(url.fileName());
             auto extra_info = QMap(m_extra_info);
