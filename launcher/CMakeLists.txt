@@ -899,6 +899,8 @@ SET(LAUNCHER_SOURCES
     ui/pages/instance/ShaderPackPage.cpp
     ui/pages/instance/ModFolderPage.cpp
     ui/pages/instance/ModFolderPage.h
+    ui/pages/instance/AutoModpackPage.cpp
+    ui/pages/instance/AutoModpackPage.h
     ui/pages/instance/NotesPage.cpp
     ui/pages/instance/NotesPage.h
     ui/pages/instance/LogPage.cpp
