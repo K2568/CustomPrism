@@ -51,7 +51,14 @@ class AutoModpackFolderModel : public ModFolderModel {
 
 AutoModpackFolderModel* createAutoModpackModel(MinecraftInstance* instance)
 {
-    const auto path = QDir(instance->gameRoot()).filePath("automodpack/modpacks");
+    auto path = instance->settings()->get("AutoModpackDirectory").toString();
+    if (path.isEmpty()) {
+        path = "automodpack/modpacks";
+    }
+    if (QDir::isRelativePath(path)) {
+        path = QDir(instance->gameRoot()).filePath(path);
+    }
+
     const bool isIndexed = !APPLICATION->settings()->get("ModMetadataDisabled").toBool();
     return new AutoModpackFolderModel(QDir(path), instance, isIndexed, true);
 }
