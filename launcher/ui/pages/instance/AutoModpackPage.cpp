@@ -23,6 +23,26 @@ class AutoModpackFolderModel : public ModFolderModel {
    public:
     using ModFolderModel::ModFolderModel;
 
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override
+    {
+        if (index.column() == ActiveColumn && role == Qt::CheckStateRole) {
+            return {};
+        }
+        return ModFolderModel::data(index, role);
+    }
+    
+    Qt::ItemFlags flags(const QModelIndex& index) const override
+    {
+        auto itemFlags = ModFolderModel::flags(index);
+        itemFlags &= ~Qt::ItemIsUserCheckable;
+        return itemFlags;
+    }
+    
+    bool setResourceEnabled(const QModelIndexList&, EnableAction) override
+    {
+        return false;
+    }
+
     QString id() const override { return "automodpack"; }
 
     void setDirectory(const QString& path)
