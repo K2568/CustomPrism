@@ -8,6 +8,7 @@
 #include "ui/pages/instance/LogPage.h"
 #include "ui/pages/instance/ManagedPackPage.h"
 #include "ui/pages/instance/ModFolderPage.h"
+#include "ui/pages/instance/AutoModpackPage.h"
 #include "ui/pages/instance/NotesPage.h"
 #include "ui/pages/instance/OtherLogsPage.h"
 #include "ui/pages/instance/ResourcePackPage.h"
@@ -33,6 +34,7 @@ class InstancePageProvider : protected QObject, public BasePageProvider {
         auto modsPage = new ModFolderPage(inst, inst->loaderModList());
         modsPage->setFilter("%1 (*.zip *.jar *.litemod *.nilmod)");
         values.append(modsPage);
+        values.append(new AutoModpackPage(inst));
         values.append(new CoreModFolderPage(inst, inst->coreModList()));
         values.append(new NilModFolderPage(inst, inst->nilModList()));
         values.append(new ResourcePackPage(inst, inst->resourcePackList()));

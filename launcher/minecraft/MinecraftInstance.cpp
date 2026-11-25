@@ -270,6 +270,7 @@ void MinecraftInstance::loadSpecificSettings()
 
     auto dataPacksEnabled = m_settings->registerSetting("GlobalDataPacksEnabled", false);
     auto dataPacksPath = m_settings->registerSetting("GlobalDataPacksPath", "");
+    m_settings->registerSetting("AutoModpackDirectory", "automodpack/modpacks");
 
     connect(dataPacksEnabled.get(), &Setting::SettingChanged, this, [this] { m_data_pack_list.reset(); });
     connect(dataPacksPath.get(), &Setting::SettingChanged, this, [this] { m_data_pack_list.reset(); });
