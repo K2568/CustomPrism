@@ -13,7 +13,7 @@ class AutoModpackPage : public ModFolderPage {
    public:
     explicit AutoModpackPage(MinecraftInstance* instance, QWidget* parent = nullptr);
 
-    QString displayName() const override { return tr("automodpack"); }
+    QString displayName() const override { return tr("AutoModpack"); }
     QIcon icon() const override { return QIcon::fromTheme("loadermods"); }
     QString id() const override { return "automodpack"; }
     QString helpPage() const override { return "Loader-mods"; }
