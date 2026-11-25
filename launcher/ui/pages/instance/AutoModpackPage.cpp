@@ -23,6 +23,8 @@ class AutoModpackFolderModel : public ModFolderModel {
    public:
     using ModFolderModel::ModFolderModel;
 
+    QString id() const override { return "automodpack"; }
+
     void setDirectory(const QString& path)
     {
         const auto normalizedPath = QDir::cleanPath(QDir(path).absolutePath());
