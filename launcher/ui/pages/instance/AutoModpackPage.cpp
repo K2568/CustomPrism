@@ -116,5 +116,6 @@ void AutoModpackPage::chooseFolder()
 void AutoModpackPage::setFolder(const QString& folder)
 {
     m_folderEdit->setText(QDir::toNativeSeparators(folder));
+    m_instance->settings()->set("AutoModpackDirectory", folder);
     static_cast<AutoModpackFolderModel*>(m_model)->setDirectory(folder);
 }
