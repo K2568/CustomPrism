@@ -129,7 +129,7 @@ AutoModpackPage::AutoModpackPage(MinecraftInstance* instance, QWidget* parent)
     m_packGroup->setExclusive(true);
 
     auto* scrollArea = new QScrollArea(m_ui->centralwidget);
-    scrollArea->setWidgetResizable(true);
+    scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     scrollArea->setFrameShape(QFrame::NoFrame);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -148,6 +148,7 @@ AutoModpackPage::AutoModpackPage(MinecraftInstance* instance, QWidget* parent)
     layout->addWidget(m_ui->filterEdit, 4, 1);
 
     setPackButtons();
+    scrollArea->setFixedHeight(m_packLayout->sizeHint().height());
 
     const auto savedPack = instance->settings()->get("AutoModpackSelectedPack").toString();
     const auto folders = getPackFolders(m_modpacksRoot);
