@@ -269,6 +269,7 @@ void LauncherPage::applySettings()
     s->set("TemplateDir", ui->templateDirTextBox->text());
     s->set("DownloadsDirWatchRecursive", ui->downloadsDirWatchRecursiveCheckBox->isChecked());
     s->set("MoveModsFromDownloadsDir", ui->downloadsDirMoveCheckBox->isChecked());
+    s->set("AutoModpackRelativePath", ui->autoModpackPathTextBox->text().trimmed());
 
     // Instance
     auto sortMode = (InstSortMode)ui->sortingModeGroup->checkedId();
@@ -347,6 +348,7 @@ void LauncherPage::loadSettings()
     ui->templateDirTextBox->setText(s->get("TemplateDir").toString());
     ui->downloadsDirWatchRecursiveCheckBox->setChecked(s->get("DownloadsDirWatchRecursive").toBool());
     ui->downloadsDirMoveCheckBox->setChecked(s->get("MoveModsFromDownloadsDir").toBool());
+    ui->autoModpackPathTextBox->setText(s->get("AutoModpackRelativePath").toString());
 
     // Instance
     QString sortMode = s->get("InstSortMode").toString();

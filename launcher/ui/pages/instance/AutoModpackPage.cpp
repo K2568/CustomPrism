@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "AutoModpackPage.h"
 
-#include <QAction>
+#include <QButtonGroup>
 #include <QDir>
 #include <QEvent>
-#include <QFileDialog>
-#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
-#include <QPushButton>
+#include <QScrollArea>
+#include <QToolButton>
 #include <QWidget>
 
 #include "Application.h"
@@ -19,9 +18,45 @@
 #include "ui_ExternalResourcesPage.h"
 
 namespace {
+QString getModpacksRoot(MinecraftInstance* instance)
+{
+    auto relativePath = APPLICATION->settings()->get("AutoModpackRelativePath").toString().trimmed();
+    if (relativePath.isEmpty()) {
+        relativePath = "automodpack/modpacks";
+    }
+
+    relativePath = QDir::cleanPath(relativePath);
+    if (QDir::isAbsolutePath(relativePath) || relativePath == ".." || relativePath.startsWith("../")) {
+        relativePath = "automodpack/modpacks";
+    }
+
+    return QDir(instance->gameRoot()).absoluteFilePath(relativePath);
+}
+
+QString getUnselectedModsPath(const QString& root)
+{
+    return QDir(root).filePath(".no-pack-selected/mods");
+}
+
+QStringList getPackFolders(const QString& root)
+{
+    QStringList folders;
+    const QDir rootDir(root);
+
+    for (const auto& entry : rootDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
+        if (QDir(entry.filePath("mods")).exists()) {
+            folders.append(entry.fileName());
+        }
+    }
+
+    return folders;
+}
+
 class AutoModpackFolderModel : public ModFolderModel {
    public:
     using ModFolderModel::ModFolderModel;
+
+    QString id() const override { return "automodpack"; }
 
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override
     {
@@ -30,20 +65,15 @@ class AutoModpackFolderModel : public ModFolderModel {
         }
         return ModFolderModel::data(index, role);
     }
-    
+
     Qt::ItemFlags flags(const QModelIndex& index) const override
     {
         auto itemFlags = ModFolderModel::flags(index);
         itemFlags &= ~Qt::ItemIsUserCheckable;
         return itemFlags;
     }
-    
-    bool setResourceEnabled(const QModelIndexList&, EnableAction) override
-    {
-        return false;
-    }
 
-    QString id() const override { return "automodpack"; }
+    bool setResourceEnabled(const QModelIndexList&, EnableAction) override { return false; }
 
     void setDirectory(const QString& path)
     {
@@ -69,48 +99,114 @@ class AutoModpackFolderModel : public ModFolderModel {
     }
 };
 
-AutoModpackFolderModel* createAutoModpackModel(MinecraftInstance* instance)
+AutoModpackFolderModel* createModel(MinecraftInstance* instance)
 {
-    auto path = instance->settings()->get("AutoModpackDirectory").toString();
-    if (path.isEmpty()) {
-        path = "automodpack/modpacks";
-    }
-    if (QDir::isRelativePath(path)) {
-        path = QDir(instance->gameRoot()).filePath(path);
-    }
-
     const bool isIndexed = !APPLICATION->settings()->get("ModMetadataDisabled").toBool();
-    return new AutoModpackFolderModel(QDir(path), instance, isIndexed, true);
+
+    // Do not create the configured root or this placeholder directory.
+    return new AutoModpackFolderModel(QDir(getUnselectedModsPath(getModpacksRoot(instance))), instance, isIndexed, false);
 }
 }  // namespace
 
 AutoModpackPage::AutoModpackPage(MinecraftInstance* instance, QWidget* parent)
-    : ModFolderPage(instance, createAutoModpackModel(instance), parent)
+    : ModFolderPage(instance, createModel(instance), parent)
+    , m_modpacksRoot(getModpacksRoot(instance))
 {
     m_model->setParent(this);
 
-    for (QAction* action : { m_ui->actionDownloadItem, m_ui->actionUpdateItem, m_ui->actionChangeVersion,
-                             m_ui->actionLockUpdates, m_ui->actionUnlockUpdates, m_ui->actionAddItem,
-                             m_ui->actionRemoveItem, m_ui->actionEnableItem, m_ui->actionDisableItem }) {
+    for (auto* action : { m_ui->actionDownloadItem, m_ui->actionUpdateItem, m_ui->actionChangeVersion,
+                          m_ui->actionLockUpdates, m_ui->actionUnlockUpdates, m_ui->actionAddItem,
+                          m_ui->actionRemoveItem, m_ui->actionEnableItem, m_ui->actionDisableItem,
+                          m_ui->actionResetItemMetadata, m_ui->actionVerifyItemDependencies }) {
         action->setVisible(false);
     }
 
-    auto* folderRow = new QWidget(m_ui->centralwidget);
-    auto* folderLayout = new QHBoxLayout(folderRow);
-    folderLayout->setContentsMargins(0, 0, 0, 0);
+    auto* directoryRow = new QWidget(m_ui->centralwidget);
+    auto* directoryLayout = new QHBoxLayout(directoryRow);
+    directoryLayout->setContentsMargins(0, 0, 0, 0);
+    directoryLayout->addWidget(new QLabel(tr("Modpacks directory:"), directoryRow));
 
-    auto* folderLabel = new QLabel(tr("Folder:"), folderRow);
-    m_folderEdit = new QLineEdit(folderRow);
+    m_folderEdit = new QLineEdit(directoryRow);
     m_folderEdit->setReadOnly(true);
-    auto* browseButton = new QPushButton(tr("Browse..."), folderRow);
+    m_folderEdit->setText(QDir::toNativeSeparators(m_modpacksRoot));
+    directoryLayout->addWidget(m_folderEdit, 1);
 
-    folderLayout->addWidget(folderLabel);
-    folderLayout->addWidget(m_folderEdit, 1);
-    folderLayout->addWidget(browseButton);
-    m_ui->gridLayout->addWidget(folderRow, 0, 1, 1, 2);
+    auto* packSelector = new QWidget(m_ui->centralwidget);
+    m_packLayout = new QHBoxLayout(packSelector);
+    m_packLayout->setContentsMargins(0, 0, 0, 0);
 
-    setFolder(m_model->dir().absolutePath());
-    connect(browseButton, &QPushButton::clicked, this, &AutoModpackPage::chooseFolder);
+    m_packGroup = new QButtonGroup(this);
+    m_packGroup->setExclusive(true);
+
+    auto* scrollArea = new QScrollArea(m_ui->centralwidget);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setWidget(packSelector);
+
+    auto* layout = m_ui->gridLayout;
+    layout->removeWidget(m_ui->counts);
+    layout->removeWidget(m_ui->treeView);
+    layout->removeWidget(m_ui->frame);
+    layout->removeWidget(m_ui->filterEdit);
+
+    layout->addWidget(directoryRow, 0, 1, 1, 2);
+    layout->addWidget(scrollArea, 1, 1, 1, 2);
+    layout->addWidget(m_ui->counts, 2, 1);
+    layout->addWidget(m_ui->treeView, 3, 1, 1, 2);
+    layout->addWidget(m_ui->frame, 4, 1, 1, 2);
+    layout->addWidget(m_ui->filterEdit, 5, 1);
+
+    setPackButtons();
+
+    const auto savedPack = instance->settings()->get("AutoModpackSelectedPack").toString();
+    const auto folders = getPackFolders(m_modpacksRoot);
+
+    QString packToSelect;
+    if (folders.size() == 1) {
+        packToSelect = folders.first();
+    } else if (folders.contains(savedPack)) {
+        packToSelect = savedPack;
+    }
+
+    if (!packToSelect.isEmpty()) {
+        selectPack(packToSelect);
+    }
+}
+
+void AutoModpackPage::setPackButtons()
+{
+    const auto folders = getPackFolders(m_modpacksRoot);
+
+    for (const auto& folder : folders) {
+        auto* button = new QToolButton(m_packGroup);
+        button->setText(folder);
+        button->setCheckable(true);
+        button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        m_packGroup->addButton(button);
+        m_packLayout->addWidget(button);
+
+        connect(button, &QToolButton::clicked, this, [this, folder] { selectPack(folder); });
+    }
+    m_packLayout->addStretch();
+}
+
+void AutoModpackPage::selectPack(const QString& packName)
+{
+    const auto folders = getPackFolders(m_modpacksRoot);
+    if (!folders.contains(packName)) {
+        return;
+    }
+
+    for (auto* button : m_packGroup->buttons()) {
+        button->setChecked(button->text() == packName);
+    }
+
+    m_instance->settings()->set("AutoModpackSelectedPack", packName);
+
+    const auto modsPath = QDir(m_modpacksRoot).filePath(packName + "/mods");
+    static_cast<AutoModpackFolderModel*>(m_model)->setDirectory(modsPath);
 }
 
 bool AutoModpackPage::eventFilter(QObject* obj, QEvent* ev)
@@ -121,21 +217,6 @@ bool AutoModpackPage::eventFilter(QObject* obj, QEvent* ev)
             return true;
         }
     }
+
     return ModFolderPage::eventFilter(obj, ev);
-}
-
-void AutoModpackPage::chooseFolder()
-{
-    const auto folder =
-        QFileDialog::getExistingDirectory(this, tr("Select automodpack modpacks folder"), m_folderEdit->text());
-    if (!folder.isEmpty()) {
-        setFolder(folder);
-    }
-}
-
-void AutoModpackPage::setFolder(const QString& folder)
-{
-    m_folderEdit->setText(QDir::toNativeSeparators(folder));
-    m_instance->settings()->set("AutoModpackDirectory", folder);
-    static_cast<AutoModpackFolderModel*>(m_model)->setDirectory(folder);
 }

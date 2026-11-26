@@ -268,6 +268,8 @@ void MinecraftInstance::loadSpecificSettings()
     m_settings->registerSetting("ExportOptionalFiles", true);
     m_settings->registerSetting("ExportRecommendedRAM");
 
+    m_settings->registerSetting("AutoModpackSelectedPack", "");
+
     auto dataPacksEnabled = m_settings->registerSetting("GlobalDataPacksEnabled", false);
     auto dataPacksPath = m_settings->registerSetting("GlobalDataPacksPath", "");
     m_settings->registerSetting("AutoModpackDirectory", "automodpack/modpacks");

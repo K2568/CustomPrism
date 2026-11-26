@@ -701,6 +701,7 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         m_settings->registerSetting("SkinsDir", "skins");
         m_settings->registerSetting("JavaDir", "java");
         m_settings->registerSetting("TemplateDir", "instance-template");
+        m_settings->registerSetting("AutoModpackRelativePath", "automodpack/modpacks");
 
 #ifdef Q_OS_MACOS
         // Folder security-scoped bookmarks

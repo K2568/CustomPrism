@@ -3,7 +3,9 @@
 
 #include "ModFolderPage.h"
 
+class QButtonGroup;
 class QEvent;
+class QHBoxLayout;
 class QLineEdit;
 class QObject;
 
@@ -22,8 +24,11 @@ class AutoModpackPage : public ModFolderPage {
     bool eventFilter(QObject* obj, QEvent* ev) override;
 
    private:
-    void chooseFolder();
-    void setFolder(const QString& folder);
+    void selectPack(const QString& packName);
+    void setPackButtons();
 
+    QString m_modpacksRoot;
     QLineEdit* m_folderEdit = nullptr;
+    QButtonGroup* m_packGroup = nullptr;
+    QHBoxLayout* m_packLayout = nullptr;
 };
