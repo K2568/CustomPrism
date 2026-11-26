@@ -180,7 +180,7 @@ void AutoModpackPage::setPackButtons()
     const auto folders = getPackFolders(m_modpacksRoot);
 
     for (const auto& folder : folders) {
-        auto* button = new QToolButton(m_packGroup);
+        auto* button = new QToolButton(m_packLayout->parentWidget());
         button->setText(folder);
         button->setCheckable(true);
         button->setToolButtonStyle(Qt::ToolButtonTextOnly);
