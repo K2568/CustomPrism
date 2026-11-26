@@ -11,6 +11,7 @@
 #include <QScrollArea>
 #include <QToolButton>
 #include <QWidget>
+#include <QScrollBar>
 
 #include "Application.h"
 #include "minecraft/mod/ModFolderModel.h"
@@ -148,7 +149,14 @@ AutoModpackPage::AutoModpackPage(MinecraftInstance* instance, QWidget* parent)
     layout->addWidget(m_ui->filterEdit, 4, 1);
 
     setPackButtons();
-    scrollArea->setFixedHeight(m_packLayout->sizeHint().height());
+
+    int buttonHeight = 0;
+    for (auto* button : m_packGroup->buttons()) {
+        buttonHeight = qMax(buttonHeight, button->sizeHint().height());
+    }
+    if (buttonHeight > 0) {
+        scrollArea->setFixedHeight(buttonHeight + scrollArea->horizontalScrollBar()->sizeHint().height());
+    };
 
     const auto savedPack = instance->settings()->get("AutoModpackSelectedPack").toString();
     const auto folders = getPackFolders(m_modpacksRoot);
