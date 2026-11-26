@@ -44,7 +44,7 @@ QStringList getPackFolders(const QString& root)
     const QDir rootDir(root);
 
     for (const auto& entry : rootDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
-        if (QDir(entry.filePath("mods")).exists()) {
+        if (QDir(entry.filePath()).exists("mods")) {
             folders.append(entry.fileName());
         }
     }
@@ -121,16 +121,6 @@ AutoModpackPage::AutoModpackPage(MinecraftInstance* instance, QWidget* parent)
         action->setVisible(false);
     }
 
-    auto* directoryRow = new QWidget(m_ui->centralwidget);
-    auto* directoryLayout = new QHBoxLayout(directoryRow);
-    directoryLayout->setContentsMargins(0, 0, 0, 0);
-    directoryLayout->addWidget(new QLabel(tr("Modpacks directory:"), directoryRow));
-
-    m_folderEdit = new QLineEdit(directoryRow);
-    m_folderEdit->setReadOnly(true);
-    m_folderEdit->setText(QDir::toNativeSeparators(m_modpacksRoot));
-    directoryLayout->addWidget(m_folderEdit, 1);
-
     auto* packSelector = new QWidget(m_ui->centralwidget);
     m_packLayout = new QHBoxLayout(packSelector);
     m_packLayout->setContentsMargins(0, 0, 0, 0);
@@ -151,12 +141,11 @@ AutoModpackPage::AutoModpackPage(MinecraftInstance* instance, QWidget* parent)
     layout->removeWidget(m_ui->frame);
     layout->removeWidget(m_ui->filterEdit);
 
-    layout->addWidget(directoryRow, 0, 1, 1, 2);
-    layout->addWidget(scrollArea, 1, 1, 1, 2);
-    layout->addWidget(m_ui->counts, 2, 1);
-    layout->addWidget(m_ui->treeView, 3, 1, 1, 2);
-    layout->addWidget(m_ui->frame, 4, 1, 1, 2);
-    layout->addWidget(m_ui->filterEdit, 5, 1);
+    layout->addWidget(scrollArea, 0, 1, 1, 2);
+    layout->addWidget(m_ui->counts, 1, 1);
+    layout->addWidget(m_ui->treeView, 2, 1, 1, 2);
+    layout->addWidget(m_ui->frame, 3, 1, 1, 2);
+    layout->addWidget(m_ui->filterEdit, 4, 1);
 
     setPackButtons();
 
